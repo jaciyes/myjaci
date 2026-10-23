@@ -1,278 +1,452 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full bg-[#070d17]">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEXUS | User Management</title>
-    <link rel="stylesheet" href="index.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEXUS - User Management System</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            nexus: {
+              bg: '#070d17',
+              panel: '#0f172a',
+              card: '#162032',
+              border: '#1e293b',
+              accent: '#60a5fa',
+              cyan: '#38bdf8',
+              glow: 'rgba(96, 165, 250, 0.15)',
+            }
+          }
+        }
+      }
+    }
+  </script>
 </head>
-<body>
-<div class="app-shell">
-    <!-- Sidebar Navigation -->
-    <aside class="sidebar">
-        <a class="brand" href="#" onclick="app.showPage('dashboard')">
-            <span class="brand-icon">N</span>
-            <span>NEXUS<span class="brand-dot">.</span></span>
-        </a>
+<body class="h-full font-sans antialiased flex flex-col md:flex-row overflow-x-hidden selection:bg-blue-500 selection:text-white">
 
-        <p class="side-label">WORKSPACE</p>
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-3 pointer-events-none"></div>
 
-        <a class="nav-link active" id="nav-dashboard" href="#" onclick="app.showPage('dashboard')">
-            <span>▦</span> Dashboard
-        </a>
-        <a class="nav-link" id="nav-add" href="#" onclick="app.showPage('add-user')">
-            <span>＋</span> Add User
-        </a>
-        <a class="nav-link" id="nav-activity" href="#" onclick="app.showPage('activity')">
-            <span>◷</span> Activity Log
-        </a>
-        <a class="nav-link" id="nav-settings" href="#" onclick="app.showPage('settings')">
-            <span>⚙</span> Settings
-        </a>
+  <!-- Sidebar Mobile Overlay -->
+  <div id="mobileOverlay" class="fixed inset-0 bg-black/60 z-30 hidden md:hidden backdrop-blur-sm" onclick="toggleMobileSidebar()"></div>
 
-        <div class="sidebar-bottom">
-            <div class="status-dot"></div>
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar" class="fixed md:static inset-y-0 left-0 z-40 w-64 bg-[#0f172a] border-r border-[#1e293b] flex flex-col transition-transform duration-300 -translate-x-full md:translate-x-0">
+    <!-- Brand / Logo -->
+    <div class="h-16 flex items-center px-6 border-b border-[#1e293b] justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-blue-600 to-cyan-400 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-500/20">
+          <i class="fa-solid fa-atom animate-spin-slow"></i>
+        </div>
+        <div>
+          <span class="font-bold text-lg tracking-wider text-white">NEXUS</span>
+          <span class="text-[10px] block text-blue-400 tracking-widest uppercase -mt-1 font-mono">Control Center</span>
+        </div>
+      </div>
+      <button onclick="toggleMobileSidebar()" class="md:hidden text-gray-400 hover:text-white">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+    </div>
+
+    <!-- Navigation Items -->
+    <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+      <div class="px-3 pb-2 text-[11px] font-mono font-semibold uppercase text-slate-500 tracking-wider">Main Navigation</div>
+      
+      <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 bg-blue-600/10 text-blue-400 border border-blue-500/20">
+        <i class="fa-solid fa-chart-pie w-5 text-center"></i>
+        <span>Dashboard</span>
+      </button>
+
+      <button onclick="switchView('adduser')" id="nav-adduser" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-slate-400 hover:text-slate-200 hover:bg-slate-800/50">
+        <i class="fa-solid fa-user-plus w-5 text-center"></i>
+        <span>Add User</span>
+      </button>
+
+      <button onclick="switchView('activity')" id="nav-activity" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-slate-400 hover:text-slate-200 hover:bg-slate-800/50">
+        <i class="fa-solid fa-clock-rotate-left w-5 text-center"></i>
+        <span>Activity Log</span>
+      </button>
+
+      <div class="pt-6 px-3 pb-2 text-[11px] font-mono font-semibold uppercase text-slate-500 tracking-wider">System</div>
+
+      <button onclick="switchView('settings')" id="nav-settings" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-slate-400 hover:text-slate-200 hover:bg-slate-800/50">
+        <i class="fa-solid fa-sliders w-5 text-center"></i>
+        <span>Settings</span>
+      </button>
+
+      <button onclick="switchView('profile')" id="nav-profile" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 text-slate-400 hover:text-slate-200 hover:bg-slate-800/50">
+        <i class="fa-solid fa-user-shield w-5 text-center"></i>
+        <span>Admin Profile</span>
+      </button>
+    </nav>
+
+    <!-- Quick System Status Badge Footer -->
+    <div class="p-4 border-t border-[#1e293b]">
+      <div class="bg-[#162032] p-3 rounded-xl border border-[#1e293b] flex items-center gap-3">
+        <span class="relative flex h-3 w-3">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+        </span>
+        <div class="text-xs">
+          <div class="text-slate-200 font-medium">System Online</div>
+          <div class="text-slate-400 text-[10px] font-mono">v2.4.0 • Encrypted</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content Layout -->
+  <div class="flex-1 flex flex-col h-full overflow-hidden min-w-0">
+    
+    <!-- Top Bar Header -->
+    <header class="h-16 bg-[#0f172a]/80 backdrop-blur-md border-b border-[#1e293b] flex items-center justify-between px-4 md:px-8 shrink-0 z-10">
+      <div class="flex items-center gap-4">
+        <button onclick="toggleMobileSidebar()" class="md:hidden text-slate-400 hover:text-white p-2">
+          <i class="fa-solid fa-bars text-lg"></i>
+        </button>
+        <h1 id="viewTitle" class="text-lg font-bold text-white tracking-wide">Dashboard</h1>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <!-- Quick Action Export Button -->
+        <button onclick="exportCSV()" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition">
+          <i class="fa-solid fa-download text-blue-400"></i>
+          <span>Export CSV</span>
+        </button>
+
+        <!-- Current Admin Avatar & Info -->
+        <div class="flex items-center gap-3 pl-2 border-l border-slate-800">
+          <div class="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-500/50 flex items-center justify-center text-blue-400 font-bold text-xs">
+            AD
+          </div>
+          <div class="hidden lg:block text-left">
+            <div class="text-xs font-medium text-slate-200">Admin User</div>
+            <div class="text-[10px] text-slate-400 font-mono">sysadmin@nexus.io</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Dynamic Content Scrollable View Area -->
+    <main class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6">
+
+      <!-- ==================== VIEW 1: DASHBOARD ==================== -->
+      <section id="view-dashboard" class="view-content space-y-6">
+        
+        <!-- Stats Cards Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Stat Card 1 -->
+          <div class="bg-[#0f172a] rounded-2xl p-5 border border-[#1e293b] flex items-center justify-between relative overflow-hidden group hover:border-blue-500/40 transition">
+            <div class="space-y-1">
+              <span class="text-xs font-medium text-slate-400 uppercase tracking-wider font-mono">Total Users</span>
+              <div id="statTotalUsers" class="text-2xl font-bold text-white">0</div>
+              <span class="text-[11px] text-emerald-400 flex items-center gap-1">
+                <i class="fa-solid fa-arrow-trend-up"></i> Active Database
+              </span>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 text-xl group-hover:scale-110 transition duration-300">
+              <i class="fa-solid fa-users"></i>
+            </div>
+          </div>
+
+          <!-- Stat Card 2 -->
+          <div class="bg-[#0f172a] rounded-2xl p-5 border border-[#1e293b] flex items-center justify-between relative overflow-hidden group hover:border-cyan-500/40 transition">
+            <div class="space-y-1">
+              <span class="text-xs font-medium text-slate-400 uppercase tracking-wider font-mono">New This Month</span>
+              <div id="statNewMonth" class="text-2xl font-bold text-white">0</div>
+              <span class="text-[11px] text-cyan-400 flex items-center gap-1">
+                <i class="fa-solid fa-user-plus"></i> Registered recently
+              </span>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 text-xl group-hover:scale-110 transition duration-300">
+              <i class="fa-solid fa-user-clock"></i>
+            </div>
+          </div>
+
+          <!-- Stat Card 3 -->
+          <div class="bg-[#0f172a] rounded-2xl p-5 border border-[#1e293b] flex items-center justify-between relative overflow-hidden group hover:border-purple-500/40 transition sm:col-span-2 lg:col-span-1">
+            <div class="space-y-1">
+              <span class="text-xs font-medium text-slate-400 uppercase tracking-wider font-mono">Filtered Results</span>
+              <div id="statFiltered" class="text-2xl font-bold text-white">0</div>
+              <span class="text-[11px] text-purple-400 flex items-center gap-1">
+                <i class="fa-solid fa-filter"></i> Matching Current Search
+              </span>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 text-xl group-hover:scale-110 transition duration-300">
+              <i class="fa-solid fa-magnifying-glass"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- User Table Control Bar -->
+        <div class="bg-[#0f172a] rounded-2xl border border-[#1e293b] p-4 flex flex-col md:flex-row gap-4 justify-between items-center">
+          <!-- Search Input -->
+          <div class="relative w-full md:w-80">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+            <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Search users by name or email..." class="w-full bg-[#070d17] border border-[#1e293b] focus:border-blue-500 rounded-xl pl-10 pr-4 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition">
+          </div>
+
+          <!-- Controls: Sort Field, Sort Order & Actions -->
+          <div class="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+            <!-- Sort Field Select -->
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-slate-400 font-mono hidden sm:inline">Sort:</span>
+              <select id="sortField" onchange="handleSortChange()" class="bg-[#070d17] border border-[#1e293b] text-slate-300 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500">
+                <option value="createdAt">Date Created</option>
+                <option value="name">Full Name</option>
+                <option value="email">Email</option>
+                <option value="id">User ID</option>
+              </select>
+            </div>
+
+            <!-- Sort Direction Toggle Button -->
+            <button onclick="toggleSortDirection()" id="sortDirBtn" class="p-2 bg-[#070d17] border border-[#1e293b] hover:border-slate-700 text-slate-300 rounded-xl text-xs flex items-center gap-1 px-3 transition" title="Toggle Sort Order">
+              <i id="sortDirIcon" class="fa-solid fa-arrow-down-wide-short"></i>
+              <span id="sortDirText" class="text-xs">Desc</span>
+            </button>
+
+            <!-- Add User Button -->
+            <button onclick="switchView('adduser')" class="glow-button bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition">
+              <i class="fa-solid fa-plus"></i>
+              <span>Add User</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Users Table Panel -->
+        <div class="bg-[#0f172a] rounded-2xl border border-[#1e293b] overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-[#162032] border-b border-[#1e293b] text-[11px] font-mono text-slate-400 uppercase tracking-wider">
+                <tr>
+                  <th class="py-3.5 px-6">User / Avatar</th>
+                  <th class="py-3.5 px-6">User ID</th>
+                  <th class="py-3.5 px-6">Email</th>
+                  <th class="py-3.5 px-6">Joined Date</th>
+                  <th class="py-3.5 px-6 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody" class="divide-y divide-[#1e293b] text-slate-300">
+                <!-- Dynamic Rows Inserted Here -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Table Footer Pagination Bar -->
+          <div class="px-6 py-4 border-t border-[#1e293b] flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div id="paginationInfo" class="text-xs text-slate-400 font-mono">
+              Showing 0-0 of 0 users
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button id="btnPrevPage" onclick="changePage(-1)" class="px-3 py-1.5 rounded-lg border border-[#1e293b] bg-[#070d17] text-slate-400 hover:text-white disabled:opacity-40 disabled:hover:text-slate-400 text-xs transition">
+                <i class="fa-solid fa-chevron-left mr-1"></i> Prev
+              </button>
+              
+              <div id="pageNumbers" class="flex items-center gap-1 text-xs">
+                <!-- Page Numbers Rendered Dynamically -->
+              </div>
+
+              <button id="btnNextPage" onclick="changePage(1)" class="px-3 py-1.5 rounded-lg border border-[#1e293b] bg-[#070d17] text-slate-400 hover:text-white disabled:opacity-40 disabled:hover:text-slate-400 text-xs transition">
+                Next <i class="fa-solid fa-chevron-right ml-1"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ==================== VIEW 2: ADD / EDIT USER FORM ==================== -->
+      <section id="view-adduser" class="view-content hidden max-w-2xl mx-auto space-y-6">
+        <div class="bg-[#0f172a] rounded-2xl border border-[#1e293b] p-6 md:p-8 space-y-6">
+          <div class="border-b border-[#1e293b] pb-4 flex justify-between items-center">
             <div>
-                <strong>System Online</strong>
-                <small>HTML + CSS + JS</small>
+              <h2 id="formHeaderTitle" class="text-xl font-bold text-white">Create New User</h2>
+              <p class="text-xs text-slate-400 mt-1">Fill in user details to register them in the NEXUS system.</p>
             </div>
-        </div>
-    </aside>
+            <button onclick="cancelForm()" class="text-slate-400 hover:text-white text-xs font-mono">
+              <i class="fa-solid fa-xmark text-base"></i>
+            </button>
+          </div>
 
-    <!-- Main Content Area -->
-    <main class="main">
-        <!-- Dashboard Page -->
-        <div id="page-dashboard" class="page-content">
-            <header class="topbar">
-                <div>
-                    <span class="breadcrumb">WORKSPACE / USERS</span>
-                    <h1>Overview<span class="title-dot">.</span></h1>
-                </div>
-                <div class="top-actions">
-                    <span class="online-pill"><span></span> LIVE STORAGE</span>
-                    <button class="button primary" onclick="app.showPage('add-user')">＋ Add User</button>
-                </div>
-            </header>
+          <form id="userForm" onsubmit="handleUserSubmit(event)" class="space-y-5">
+            <input type="hidden" id="editUserId" value="">
 
-            <div id="notice-box" class="notice" style="display: none;"></div>
-
-            <section class="stats">
-                <article class="stat-card">
-                    <div class="stat-top">
-                        <span class="stat-label">TOTAL USERS</span>
-                        <span class="stat-icon blue">♙</span>
-                    </div>
-                    <strong class="stat-number" id="stat-total">0</strong>
-                    <span class="stat-foot">All database records</span>
-                </article>
-
-                <article class="stat-card">
-                    <div class="stat-top">
-                        <span class="stat-label">NEW THIS MONTH</span>
-                        <span class="stat-icon purple">↗</span>
-                    </div>
-                    <strong class="stat-number" id="stat-month">0</strong>
-                    <span class="stat-foot">Users registered this month</span>
-                </article>
-
-                <article class="stat-card">
-                    <div class="stat-top">
-                        <span class="stat-label">MATCHING RESULTS</span>
-                        <span class="stat-icon green">⌕</span>
-                    </div>
-                    <strong class="stat-number" id="stat-matching">0</strong>
-                    <span class="stat-foot">Based on your current search</span>
-                </article>
-            </section>
-
-            <section class="panel">
-                <div class="panel-heading">
-                    <div>
-                        <span class="section-tag">DATABASE DIRECTORY</span>
-                        <h2>User Records</h2>
-                        <p>Search, organize, view, and manage users.</p>
-                    </div>
-                    <button class="button secondary" onclick="app.exportCSV()">↓ Export CSV</button>
-                </div>
-
-                <div class="filters">
-                    <div class="search-box">
-                        <span>⌕</span>
-                        <input type="search" id="search-input" placeholder="Search name or email..." oninput="app.handleFilterChange()">
-                    </div>
-
-                    <select id="sort-select" onchange="app.handleFilterChange()">
-                        <option value="created_at">Date created</option>
-                        <option value="name">Name</option>
-                        <option value="email">Email</option>
-                        <option value="id">ID</option>
-                    </select>
-
-                    <select id="direction-select" onchange="app.handleFilterChange()">
-                        <option value="desc">Descending</option>
-                        <option value="asc">Ascending</option>
-                    </select>
-
-                    <button class="button secondary" onclick="app.resetFilters()">Reset</button>
-                </div>
-
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>USER</th>
-                                <th>EMAIL ADDRESS</th>
-                                <th>DATE CREATED</th>
-                                <th>ACTIONS</th>
-                            </tr>
-                        </thead>
-                        <tbody id="user-table-body">
-                            <!-- Populated via Javascript -->
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="table-footer">
-                    <span id="record-count-text">Showing 0–0 of 0 records</span>
-                    <div class="pagination">
-                        <button id="btn-prev" class="button secondary" onclick="app.changePage(-1)">←</button>
-                        <span class="page-count" id="page-indicator">1 / 1</span>
-                        <button id="btn-next" class="button secondary" onclick="app.changePage(1)">→</button>
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        <!-- Add / Edit User Page -->
-        <div id="page-user-form" class="page-content" style="display: none;">
-            <div class="form-page">
-                <a class="back-link" href="#" onclick="app.showPage('dashboard')">← Back to Dashboard</a>
-                <section class="form-panel">
-                    <span class="section-tag" id="form-tag">NEW DATABASE ENTRY</span>
-                    <h1 id="form-title">Add User<span class="title-dot">.</span></h1>
-                    <p class="form-intro" id="form-subtitle">Create a new user record.</p>
-
-                    <div id="form-error" class="error-message" style="display: none;"></div>
-
-                    <form onsubmit="app.saveUser(event)">
-                        <input type="hidden" id="user-id">
-
-                        <label for="user-name">Full Name</label>
-                        <input id="user-name" type="text" maxlength="100" required>
-
-                        <label for="user-email">Email Address</label>
-                        <input id="user-email" type="email" maxlength="100" required>
-
-                        <div class="form-actions">
-                            <button class="button primary" type="submit" id="form-submit-btn">＋ Create User</button>
-                            <button class="button secondary" type="button" onclick="app.showPage('dashboard')">Cancel</button>
-                        </div>
-                    </form>
-                </section>
+            <!-- Full Name Field -->
+            <div class="space-y-2">
+              <label class="block text-xs font-mono uppercase tracking-wider text-slate-300">Full Name <span class="text-blue-400">*</span></label>
+              <div class="relative">
+                <i class="fa-solid fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                <input type="text" id="inputName" required placeholder="e.g. Alex Vance" class="w-full bg-[#070d17] border border-[#1e293b] focus:border-blue-500 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition">
+              </div>
+              <p id="errorName" class="text-xs text-rose-400 hidden">Please enter a valid full name.</p>
             </div>
-        </div>
 
-        <!-- View Profile Page -->
-        <div id="page-profile" class="page-content" style="display: none;">
-            <div class="form-page">
-                <a class="back-link" href="#" onclick="app.showPage('dashboard')">← Dashboard</a>
-                <section class="form-panel">
-                    <span class="section-tag">USER PROFILE</span>
-                    <div class="avatar" id="profile-avatar" style="margin-top:20px;width:60px;height:60px;font-size:25px"></div>
-
-                    <h1 id="profile-name"><span class="title-dot">.</span></h1>
-                    <p class="form-intro" id="profile-id-text">User ID: #</p>
-
-                    <label>Full Name</label>
-                    <p id="profile-detail-name"></p>
-
-                    <label>Email Address</label>
-                    <p id="profile-detail-email"></p>
-
-                    <label>Registration Date</label>
-                    <p id="profile-detail-date"></p>
-
-                    <div class="form-actions">
-                        <button class="button primary" id="profile-edit-btn">✎ Edit User</button>
-                        <button class="button secondary" onclick="app.showPage('dashboard')">Back</button>
-                    </div>
-                </section>
+            <!-- Email Address Field -->
+            <div class="space-y-2">
+              <label class="block text-xs font-mono uppercase tracking-wider text-slate-300">Email Address <span class="text-blue-400">*</span></label>
+              <div class="relative">
+                <i class="fa-solid fa-envelope absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                <input type="email" id="inputEmail" required placeholder="alex.vance@nexus.io" class="w-full bg-[#070d17] border border-[#1e293b] focus:border-blue-500 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition">
+              </div>
+              <p id="errorEmail" class="text-xs text-rose-400 hidden">Please enter a valid email address.</p>
             </div>
-        </div>
 
-        <!-- Activity Log Page -->
-        <div id="page-activity" class="page-content" style="display: none;">
-            <div class="form-page">
-                <a class="back-link" href="#" onclick="app.showPage('dashboard')">← Dashboard</a>
-                <section class="form-panel">
-                    <span class="section-tag">SYSTEM MONITOR</span>
-                    <h1>Activity Log<span class="title-dot">.</span></h1>
-                    <p class="form-intro">Recent actions recorded by the application.</p>
-
-                    <p><strong id="activity-total-count">0</strong> recorded events</p>
-                    <div id="activity-log-list"></div>
-                </section>
+            <!-- Form Actions -->
+            <div class="pt-4 border-t border-[#1e293b] flex items-center justify-end gap-3">
+              <button type="button" onclick="cancelForm()" class="px-5 py-2.5 rounded-xl border border-[#1e293b] bg-[#070d17] hover:bg-slate-800 text-slate-300 text-xs font-semibold transition">
+                Cancel
+              </button>
+              <button type="submit" id="btnSubmitUser" class="glow-button px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-2 transition">
+                <i class="fa-solid fa-floppy-disk"></i>
+                <span id="submitBtnText">Save User</span>
+              </button>
             </div>
+          </form>
         </div>
+      </section>
 
-        <!-- Settings Page -->
-        <div id="page-settings" class="page-content" style="display: none;">
-            <div class="form-page">
-                <a class="back-link" href="#" onclick="app.showPage('dashboard')">← Dashboard</a>
-                <section class="form-panel">
-                    <span class="section-tag">PREFERENCES</span>
-                    <h1>Settings<span class="title-dot">.</span></h1>
-                    <p class="form-intro">Customize your dashboard preferences.</p>
-
-                    <div id="settings-notice" class="notice" style="display: none;"></div>
-
-                    <form onsubmit="app.saveSettings(event)">
-                        <label for="setting-theme">Preferred Theme</label>
-                        <select id="setting-theme" style="width:100%;padding:13px;background:#0a1220;color:#edf3ff;border:1px solid #2b3a52;border-radius:8px">
-                            <option value="dark">Dark</option>
-                            <option value="light">Light (preference only)</option>
-                        </select>
-
-                        <label for="setting-pagesize" style="margin-top:15px; display:block;">Preferred Rows Per Page</label>
-                        <select id="setting-pagesize" style="width:100%;padding:13px;background:#0a1220;color:#edf3ff;border:1px solid #2b3a52;border-radius:8px">
-                            <option value="8">8 rows</option>
-                            <option value="15">15 rows</option>
-                            <option value="25">25 rows</option>
-                            <option value="50">50 rows</option>
-                        </select>
-
-                        <div class="form-actions">
-                            <button class="button primary" type="submit">✓ Save Settings</button>
-                            <button class="button secondary" type="button" onclick="app.showPage('dashboard')">Cancel</button>
-                        </div>
-                    </form>
-                </section>
+      <!-- ==================== VIEW 3: ACTIVITY LOG ==================== -->
+      <section id="view-activity" class="view-content hidden space-y-6">
+        <div class="bg-[#0f172a] rounded-2xl border border-[#1e293b] p-6 space-y-4">
+          <div class="flex justify-between items-center border-b border-[#1e293b] pb-4">
+            <div>
+              <h2 class="text-lg font-bold text-white">System Activity Audit Trail</h2>
+              <p class="text-xs text-slate-400 mt-1">Real-time record of system changes and user actions.</p>
             </div>
-        </div>
+            <button onclick="clearActivityLogs()" class="px-3 py-1.5 rounded-lg border border-rose-500/30 text-rose-400 hover:bg-rose-500/10 text-xs font-mono transition">
+              <i class="fa-solid fa-trash mr-1"></i> Clear Log
+            </button>
+          </div>
 
-        <!-- 404 Page -->
-        <div id="page-404" class="page-content" style="display: none;">
-            <div class="form-page">
-                <section class="form-panel error-panel">
-                    <span class="section-tag">SYSTEM MESSAGE</span>
-                    <div class="error-code">404</div>
-                    <h1>Page not found<span class="title-dot">.</span></h1>
-                    <p class="form-intro">This page doesn't exist or may have been moved.</p>
-                    <div class="form-actions" style="justify-content:center">
-                        <button class="button primary" onclick="app.showPage('dashboard')">⌂ Return to Dashboard</button>
-                    </div>
-                </section>
+          <div class="space-y-3" id="activityLogContainer">
+            <!-- Dynamic Activity Entries -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== VIEW 4: SETTINGS ==================== -->
+      <section id="view-settings" class="view-content hidden max-w-2xl mx-auto space-y-6">
+        <div class="bg-[#0f172a] rounded-2xl border border-[#1e293b] p-6 md:p-8 space-y-6">
+          <div class="border-b border-[#1e293b] pb-4">
+            <h2 class="text-xl font-bold text-white">System Preferences</h2>
+            <p class="text-xs text-slate-400 mt-1">Customize UI behavior and pagination preferences.</p>
+          </div>
+
+          <form onsubmit="saveSettings(event)" class="space-y-6">
+            <!-- Rows Per Page Setting -->
+            <div class="space-y-2">
+              <label class="block text-xs font-mono uppercase tracking-wider text-slate-300">Default Rows Per Page</label>
+              <select id="settingRowsPerPage" class="w-full bg-[#070d17] border border-[#1e293b] focus:border-blue-500 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none">
+                <option value="5">5 rows</option>
+                <option value="8">8 rows</option>
+                <option value="12">12 rows</option>
+                <option value="20">20 rows</option>
+              </select>
             </div>
-        </div>
 
-        <footer class="footer">
-            <span>NEXUS USER MANAGEMENT</span>
-            <span>HTML · CSS · JAVASCRIPT</span>
-        </footer>
+            <!-- Accent Color Theme -->
+            <div class="space-y-2">
+              <label class="block text-xs font-mono uppercase tracking-wider text-slate-300">Theme Visual Preset</label>
+              <div class="grid grid-cols-2 gap-3">
+                <label class="border border-blue-500/50 bg-blue-500/10 rounded-xl p-3 flex items-center gap-3 cursor-pointer">
+                  <input type="radio" name="themePreset" value="cyberpunk" checked class="text-blue-500 focus:ring-0">
+                  <span class="text-xs font-medium text-slate-200">Cyber Blue (Default)</span>
+                </label>
+                <label class="border border-slate-800 bg-[#070d17] rounded-xl p-3 flex items-center gap-3 cursor-pointer opacity-60">
+                  <input type="radio" name="themePreset" value="emerald" disabled class="text-emerald-500 focus:ring-0">
+                  <span class="text-xs font-medium text-slate-400">Emerald Cyber (Locked)</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="pt-4 border-t border-[#1e293b] flex justify-end">
+              <button type="submit" class="glow-button px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition">
+                Save Preferences
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ==================== VIEW 5: ADMIN PROFILE ==================== -->
+      <section id="view-profile" class="view-content hidden max-w-2xl mx-auto space-y-6">
+        <div class="bg-[#0f172a] rounded-2xl border border-[#1e293b] p-6 md:p-8 space-y-6">
+          <div class="flex items-center gap-5 border-b border-[#1e293b] pb-6">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-400 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-blue-500/20">
+              AD
+            </div>
+            <div>
+              <h2 class="text-xl font-bold text-white">System Administrator</h2>
+              <p class="text-xs text-blue-400 font-mono mt-0.5">Role: SuperAdmin • Level 5 Access</p>
+              <p class="text-xs text-slate-400 mt-1">sysadmin@nexus.io</p>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <h3 class="text-xs font-mono uppercase text-slate-400 tracking-wider">Security Information</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
+              <div class="bg-[#070d17] p-3.5 rounded-xl border border-[#1e293b]">
+                <span class="text-slate-500 block">Session ID:</span>
+                <span class="text-slate-200">NXS-99482-SEC</span>
+              </div>
+              <div class="bg-[#070d17] p-3.5 rounded-xl border border-[#1e293b]">
+                <span class="text-slate-500 block">Last Login:</span>
+                <span class="text-slate-200" id="lastLoginTime">Just Now</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </main>
-</div>
+  </div>
 
-<script src="script.js"></script>
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-6 max-w-md w-full space-y-5 shadow-2xl">
+      <div class="flex items-center gap-4 text-rose-400">
+        <div class="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-xl shrink-0">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-white">Confirm User Deletion</h3>
+          <p class="text-xs text-slate-400 mt-0.5">This action cannot be undone.</p>
+        </div>
+      </div>
+
+      <p class="text-xs text-slate-300 leading-relaxed bg-[#070d17] p-3.5 rounded-xl border border-[#1e293b]">
+        Are you sure you want to delete user <span id="deleteUserName" class="font-bold text-white"></span>? All associated records will be permanently removed.
+      </p>
+
+      <div class="flex justify-end gap-3 pt-2">
+        <button onclick="closeDeleteModal()" class="px-4 py-2 rounded-xl border border-[#1e293b] bg-[#070d17] text-slate-300 hover:bg-slate-800 text-xs font-semibold transition">
+          Cancel
+        </button>
+        <button id="btnConfirmDelete" onclick="confirmUserDelete()" class="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold transition">
+          Delete User
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
